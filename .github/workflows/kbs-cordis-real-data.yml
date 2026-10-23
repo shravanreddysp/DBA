@@ -25,6 +25,9 @@ jobs:
       - name: Download and prepare official CORDIS archive
         working-directory: KBS_Research
         run: python prepare_cordis.py
+      - name: Inventory retrospective disclosure-date fields
+        working-directory: KBS_Research
+        run: python disclosure_field_audit.py
       - name: Validate actual exported records
         working-directory: KBS_Research
         run: python validate_cordis.py
@@ -88,4 +91,5 @@ jobs:
             KBS_Research/data/processed/kg_model_results.json
             KBS_Research/data/processed/audit_results.json
             KBS_Research/data/processed/paired_uncertainty.json
+            KBS_Research/data/processed/disclosure_field_audit.json
           retention-days: 30
