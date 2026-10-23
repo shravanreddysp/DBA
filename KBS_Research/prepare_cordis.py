@@ -92,10 +92,11 @@ def prepare(archive, out, train_end, val_end, test_end, max_orgs=60):
     # Candidate pairs are existing, previously unlinked organizations.
     # Unknown pairs are UNLABELED, not proven negatives. Ranking metrics must
     # be described as observed-positive retrieval with incomplete positives.
-    candidates = [(a,b) for i,a in enumerate(eligible) for b in eligible[i+1:] if (a,b) not in history]
-    candidate_set = set(candidates)
-    val_pos &= candidate_set
-    test_pos &= candidate_set
+    # Every positive is already a new pair by its first-collaboration date.
+    # Do not allocate O(number_of_organizations squared) candidate pairs.
+    candidate_count = len(eligible)*(len(eligible)-1)//2 - sum(
+        1 for a,b in history if a in known_orgs and b in known_orgs
+    )
     def write(name, header, iterable):
         with (out/name).open("w", newline="", encoding="utf-8") as f:
             w=csv.writer(f);w.writerow(header);w.writerows(iterable)
@@ -112,12 +113,12 @@ def prepare(archive, out, train_end, val_end, test_end, max_orgs=60):
       "organization_rows_missing_id":missing_org,"organizations_known_by_train_end":len(eligible),
       "training_first_collaboration_edges":len(history),
       "validation_first_collaborations":len(val_pos),"test_first_collaborations":len(test_pos),
-      "candidate_pairs_after_train_cutoff":len(candidates),
+      "candidate_pairs_after_train_cutoff":candidate_count,
       "limitations":["Retrospective snapshot; no proof of historical publication availability.",
        "First co-participation in funded projects is a collaboration proxy, not innovation success.",
        "Missing collaborations outside CORDIS; unlabeled pairs are not confirmed negatives.",
        "Historical organizations with changed identifiers can cause entity-resolution errors.",
-       "Validation and test positives are both relative to the training cutoff; test evaluation must censor validation-era new edges."]}
+       "Test candidate ranking must remove validation-era edges, and recompute historical features at the validation cutoff. This script exports labels only; it does not run evaluation."]}
     (out/"manifest.json").write_text(json.dumps(stats,indent=2),encoding="utf-8")
     return stats
 
