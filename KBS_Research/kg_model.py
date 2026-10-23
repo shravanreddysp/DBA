@@ -15,6 +15,7 @@ from collections import defaultdict
 from datetime import date
 from pathlib import Path
 from prepare_cordis import field, parse_date, rows_from_zip
+from bipartite_model import historical_context, bipartite_score
 
 def stable(seed,*values):
     return hashlib.sha256("|".join(map(str,(seed,)+values)).encode()).digest()
@@ -60,13 +61,14 @@ def rank(seed, known, events, projects, memberships, cutoff, horizon,
          k=10, query_count=250, candidate_budget=2250, explore=250,
          weight=0.0):
     adj,activity=snapshot(known,events,projects,memberships,cutoff)
+    org_projects,project_orgs=historical_context(projects,memberships,cutoff,known)
     future=defaultdict(set)
     for a,b,d in events:
         if cutoff<d<=horizon:future[a].add(b);future[b].add(a)
     degree={n:len(adj[n]) for n in known}
     hubs=sorted(known,key=lambda n:(-degree[n],n))[:100]
     sources=sorted(known,key=lambda n:(stable(seed,"query",n),n))[:query_count]
-    hits={"aa":0,"kg":0,"cn":0,"ra":0,"pa":0};covered=0;total=0;query_positive=0
+    hits={"aa":0,"kg":0,"cn":0,"ra":0,"pa":0,"bp":0};covered=0;total=0;query_positive=0
     query_details=[]
     for source in sources:
         truth=future[source]
@@ -99,6 +101,7 @@ def rank(seed, known, events, projects, memberships, cutoff, horizon,
             scores["cn"].append((len(shared),target))
             scores["ra"].append((sum(1/degree[z] for z in shared if degree[z]>0),target))
             scores["pa"].append((degree[source]*degree[target],target))
+            scores["bp"].append((bipartite_score(source,target,org_projects,project_orgs),target))
         local_hits={}
         for method in hits:
             top=sorted(scores[method],key=lambda t:(-t[0],t[1]))[:k]
@@ -125,7 +128,7 @@ def run(folder,archive,seeds=(11,23,37),weights=(0.0,0.25,0.5,1.0),queries=250):
     chosen=sorted(weights,key=lambda w:(-val_score(w),w))[0]
     testing=[rank(seed,known,events,projects,memberships,date(2024,12,31),
                   date(2025,12,31),weight=chosen,query_count=queries) for seed in seeds]
-    return {"method":"KG-context weighted Adamic-Adar versus matched-pool AA, CN, RA and PA",
+    return {"method":"KG-context weighted Adamic-Adar versus matched-pool AA, CN, RA, PA and historical bipartite paths",
             "seeds":list(seeds),"query_count":queries,
             "validation_weight_scores":{str(w):val_score(w) for w in weights},
             "chosen_weight":chosen,"validation":validation[chosen],"test":testing,
