@@ -1,0 +1,25 @@
+name: KBS CORDIS offline checks
+on:
+  push:
+    paths:
+      - 'KBS_Research/prepare_cordis.py'
+      - 'KBS_Research/test_prepare_cordis.py'
+      - 'KBS_Research/validate_cordis.py'
+      - '.github/workflows/kbs-cordis-checks.yml'
+  pull_request:
+    paths:
+      - 'KBS_Research/**'
+      - '.github/workflows/kbs-cordis-checks.yml'
+jobs:
+  fixture-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Offline parser and temporal split fixture
+        working-directory: KBS_Research
+        run: python -m unittest -v test_prepare_cordis.py
