@@ -48,3 +48,24 @@ def bipartite_score(source,target,org_projects,project_orgs):
             if org!=source and org!=target and org in intermediary:
                 score+=intermediary[org]*scale/math.log1p(len(org_projects[org])+1)
     return score
+
+
+def source_intermediaries(source,org_projects,project_orgs):
+    weights=defaultdict(float)
+    for pid in org_projects.get(source,()):
+        group=project_orgs[pid]
+        scale=1.0/max(1,len(group)-1)
+        for org in group:
+            if org!=source:
+                weights[org]+=scale/math.log1p(len(org_projects[org])+1)
+    return weights
+
+
+def fast_bipartite_score(source,target,weights,org_projects,project_orgs):
+    if source==target:return 0.0
+    score=0.0
+    for pid in org_projects.get(target,()):
+        group=project_orgs[pid]
+        scale=1.0/max(1,len(group)-1)
+        score+=sum(weights.get(org,0.0) for org in group if org!=source and org!=target)*scale
+    return score
