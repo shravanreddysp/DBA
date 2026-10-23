@@ -16,13 +16,16 @@ jobs:
           python-version: '3.11'
       - name: Run offline unit tests
         working-directory: KBS_Research
-        run: python -m unittest -v test_prepare_cordis.py test_temporal_baselines.py
+        run: python -m unittest -v test_prepare_cordis.py test_temporal_baselines.py test_knowledge_graph.py
       - name: Download and prepare official CORDIS archive
         working-directory: KBS_Research
         run: python prepare_cordis.py
       - name: Validate actual exported records
         working-directory: KBS_Research
         run: python validate_cordis.py
+      - name: Build dated organization-project knowledge graph
+        working-directory: KBS_Research
+        run: python build_knowledge_graph.py --cutoff 2023-12-31
       - name: Summarize verified data manifest
         if: success()
         working-directory: KBS_Research
@@ -31,6 +34,7 @@ jobs:
           import json, os
           from pathlib import Path
           m=json.loads(Path('data/processed/manifest.json').read_text())
+          kg=json.loads(Path('data/kg_2023/kg_manifest.json').read_text())
           keys=['source','archive_sha256','archive_bytes','projects_with_dates','projects_with_memberships','organizations_known_by_train_end','training_first_collaboration_edges','validation_first_collaborations','test_first_collaborations']
           with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
               f.write('## CORDIS real-data extraction\n\n')
@@ -43,5 +47,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cordis-validation-manifest
-          path: KBS_Research/data/processed/manifest.json
+          path: |
+            KBS_Research/data/processed/manifest.json
+            KBS_Research/data/kg_2023/kg_manifest.json
           retention-days: 30
