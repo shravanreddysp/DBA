@@ -70,15 +70,19 @@ def rank(seed, known, events, projects, memberships, cutoff, horizon,
     sources=sorted(known,key=lambda n:(stable(seed,"query",n),n))[:query_count]
     hits={"aa":0,"kg":0,"cn":0,"ra":0,"pa":0,"bp":0};covered=0;total=0;query_positive=0
     query_details=[]
+    retrieval_totals={'hubs':0,'two_hop':0,'exploration':0,'union':0}
+    retrieval_pool_sizes=[]
     for source in sources:
         truth=future[source]
         total+=len(truth)
         query_positive+=bool(truth)
         # Build candidate pool without any future-label information.
         pool=set(hubs)
+        hub_pool=set(pool)
         for intermediate in sorted(adj[source],key=lambda n:(-degree[n],n)):
             pool.update(adj[intermediate])
             if len(pool)>=candidate_budget-explore:break
+        two_hop_pool=set(pool)-hub_pool
         exploratory=sorted(known,key=lambda n:(stable(seed,"explore",source,n),n))[:explore]
         pool.update(exploratory)
         pool.discard(source);pool.difference_update(adj[source])
@@ -87,6 +91,11 @@ def rank(seed, known, events, projects, memberships, cutoff, horizon,
             rest=sorted(pool-priority,key=lambda n:(-degree[n],n))
             pool=priority|set(rest[:max(0,candidate_budget-len(priority))])
         covered+=len(pool&truth)
+        retrieval_totals['hubs']+=len((hub_pool&pool)&truth)
+        retrieval_totals['two_hop']+=len((two_hop_pool&pool)&truth)
+        retrieval_totals['exploration']+=len((set(exploratory)&pool)&truth)
+        retrieval_totals['union']+=len(pool&truth)
+        retrieval_pool_sizes.append(len(pool))
         bp_weights=source_intermediaries(source,org_projects,project_orgs)
         scores={m:[] for m in hits}
         for target in pool:
@@ -114,7 +123,12 @@ def rank(seed, known, events, projects, memberships, cutoff, horizon,
             "queries":len(sources),"queries_with_observed_positives":query_positive,
             "positive_instances":total,"candidate_coverage":covered/total if total else None,
             "recall_at_k":{m:hits[m]/total if total else None for m in hits},
-            "per_query":query_details}
+            "per_query":query_details,
+            "retrieval_diagnostics":{"observed_positive_total":total,
+              "covered_observed_positives":retrieval_totals["union"],
+              "observed_positive_hits_by_candidate_source":retrieval_totals,
+              "mean_candidates_per_query":statistics.mean(retrieval_pool_sizes) if retrieval_pool_sizes else 0,
+              "note":"Candidate-source counts overlap and are not additive; all source sets are formed without future labels."}}
 
 def run(folder,archive,seeds=(11,23,37),weights=(0.0,0.25,0.5,1.0),queries=250):
     known,events,projects,memberships=load(folder,archive)
