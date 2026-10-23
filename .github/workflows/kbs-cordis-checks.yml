@@ -7,6 +7,8 @@ on:
       - 'KBS_Research/validate_cordis.py'
       - 'KBS_Research/temporal_baselines.py'
       - 'KBS_Research/test_temporal_baselines.py'
+      - 'KBS_Research/build_knowledge_graph.py'
+      - 'KBS_Research/test_knowledge_graph.py'
       - '.github/workflows/kbs-cordis-checks.yml'
   pull_request:
     paths:
@@ -24,4 +26,4 @@ jobs:
           python-version: '3.11'
       - name: Offline parser and temporal split fixture
         working-directory: KBS_Research
-        run: python -m unittest -v test_prepare_cordis.py test_temporal_baselines.py
+        run: python -m unittest -v test_prepare_cordis.py test_temporal_baselines.py test_knowledge_graph.py
