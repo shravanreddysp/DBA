@@ -16,7 +16,7 @@ def read(path):
     with path.open(newline="",encoding="utf-8") as f:
         yield from csv.DictReader(f)
 
-def evaluate(folder, cutoff, horizon, k=10, top_degree=100, max_twohop=10000):
+def evaluate(folder, cutoff, horizon, k=10, top_degree=100, max_twohop=2000, max_queries=250):
     if not cutoff<horizon:raise ValueError("cutoff must be earlier than horizon")
     nodes={r["organization_id"] for r in read(folder/"known_organizations.csv")}
     adj={n:set() for n in nodes}
@@ -35,7 +35,9 @@ def evaluate(folder, cutoff, horizon, k=10, top_degree=100, max_twohop=10000):
     methods=("common_neighbors","adamic_adar","resource_allocation","preferential_attachment")
     hits={m:0 for m in methods}
     covered=0;total=0;queries=0; candidate_total=0
-    for source in sorted(positives):
+    all_sources=sorted(positives)
+    selected_sources=all_sources[:max_queries]
+    for source in selected_sources:
         truth=positives[source]
         if not truth:continue
         queries+=1;total+=len(truth)
@@ -65,7 +67,8 @@ def evaluate(folder, cutoff, horizon, k=10, top_degree=100, max_twohop=10000):
             ranked=sorted(rankings[method],key=lambda x:(-x[0],x[1]))[:k]
             hits[method]+=sum(target in truth for _,target in ranked)
     return {"cutoff":str(cutoff),"horizon":str(horizon),"k":k,
-            "known_organizations":len(nodes),"query_organizations":queries,
+            "known_organizations":len(nodes),"query_organizations":queries,"total_eligible_query_organizations":len(all_sources),
+            "query_selection":"First organization IDs in sorted order; deterministic convenience cohort, not representative sampling.",
             "observed_positive_instances":total,
             "mean_candidates_per_query":candidate_total/queries if queries else None,
             "candidate_coverage":covered/total if total else None,
@@ -77,10 +80,11 @@ def main():
     p.add_argument("--data",type=Path,default=Path("data/processed"))
     p.add_argument("--k",type=int,default=10)
     p.add_argument("--top-degree",type=int,default=100)
-    p.add_argument("--max-twohop",type=int,default=10000)
+    p.add_argument("--max-twohop",type=int,default=2000)
+    p.add_argument("--max-queries",type=int,default=250)
     a=p.parse_args()
-    if min(a.k,a.top_degree,a.max_twohop)<1:p.error("k, top-degree and max-twohop must be positive")
-    results=[evaluate(a.data,date(2023,12,31),date(2024,12,31),a.k,a.top_degree,a.max_twohop),
+    if min(a.k,a.top_degree,a.max_twohop,a.max_queries)<1:p.error("k, top-degree and max-twohop must be positive")
+    results=[evaluate(a.data,date(2023,12,31),date(2024,12,31),a.k,a.top_degree,a.max_twohop,a.max_queries),
              evaluate(a.data,date(2024,12,31),date(2025,12,31),a.k,a.top_degree,a.max_twohop)]
     output=a.data/"scalable_baseline_results.json"
     output.write_text(json.dumps(results,indent=2),encoding="utf-8")
