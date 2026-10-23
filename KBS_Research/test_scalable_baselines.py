@@ -23,6 +23,12 @@ class ScalableBaselineTest(unittest.TestCase):
             self.assertEqual(test["observed_positive_instances"],2)
             self.assertEqual(val["candidate_coverage"],1.0)
             self.assertEqual(test["candidate_coverage"],1.0)
+            self.assertEqual(val["query_organizations"],4)
+            self.assertEqual(val["query_organizations_with_future_positives"],2)
+            sampled=evaluate(p,date(2023,12,31),date(2024,12,31),k=1,
+                             top_degree=4,max_twohop=10,max_queries=2,seed=11)
+            self.assertEqual(sampled["query_organizations"],2)
+            self.assertEqual(sampled["seed"],11)
             for m in val["observed_positive_recall_at_k"].values():
                 self.assertGreaterEqual(m,0);self.assertLessEqual(m,1)
 
