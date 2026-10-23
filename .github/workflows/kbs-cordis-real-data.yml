@@ -1,0 +1,47 @@
+name: KBS CORDIS real-data validation
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 9 1 * *'
+permissions:
+  contents: read
+jobs:
+  validate-official-cordis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run offline unit tests
+        working-directory: KBS_Research
+        run: python -m unittest -v test_prepare_cordis.py test_temporal_baselines.py
+      - name: Download and prepare official CORDIS archive
+        working-directory: KBS_Research
+        run: python prepare_cordis.py
+      - name: Validate actual exported records
+        working-directory: KBS_Research
+        run: python validate_cordis.py
+      - name: Summarize verified data manifest
+        if: success()
+        working-directory: KBS_Research
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          m=json.loads(Path('data/processed/manifest.json').read_text())
+          keys=['source','archive_sha256','archive_bytes','projects_with_dates','projects_with_memberships','organizations_known_by_train_end','training_first_collaboration_edges','validation_first_collaborations','test_first_collaborations']
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+              f.write('## CORDIS real-data extraction\n\n')
+              for k in keys:
+                  f.write(f'- **{k}:** {m.get(k)}\n')
+              f.write('\n**Caution:** Passing structural validation does not establish historical point-in-time public availability or entity-resolution accuracy.\n')
+          PY
+      - name: Upload non-personal validation manifest
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cordis-validation-manifest
+          path: KBS_Research/data/processed/manifest.json
+          retention-days: 30
