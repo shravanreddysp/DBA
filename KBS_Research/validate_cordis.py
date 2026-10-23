@@ -43,9 +43,6 @@ def validate(root):
     assert not (pair_sets["validation"]&pair_sets["test"])
     assert len(pair_sets["validation"])==manifest["validation_first_collaborations"]
     assert len(pair_sets["test"])==manifest["test_first_collaborations"]
-    # train_edges.csv includes collaborations among organizations that may
-    # first appear AFTER train_end; detect this rather than silently accept.
-    assert pair_sets["train"]<=set((a,b) for a,b in pair_sets["train"])
     return {k:len(v) for k,v in pair_sets.items()}
 
 if __name__=="__main__":
