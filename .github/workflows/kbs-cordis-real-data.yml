@@ -44,7 +44,14 @@ jobs:
               f.write('## CORDIS real-data extraction\n\n')
               for k in keys:
                   f.write(f'- **{k}:** {m.get(k)}\n')
-              f.write('\n**Caution:** Passing structural validation does not establish historical point-in-time public availability or entity-resolution accuracy.\n')
+              f.write('\\n## Exploratory graph baselines\\n\\n')
+              for split in baseline:
+                  f.write(f'### Horizon {split["horizon"]}\\n')
+                  f.write(f'- Query organizations: {split["query_organizations"]} of {split["total_eligible_query_organizations"]}\\n')
+                  f.write(f'- Candidate coverage: {split["candidate_coverage"]}\\n')
+                  for method, value in split["observed_positive_recall_at_k"].items():
+                      f.write(f'- {method} observed-positive Recall@{split["k"]}: {value}\\n')
+              f.write('\\n**Caution:** Passing structural validation does not establish historical point-in-time public availability or entity-resolution accuracy.\n')
           PY
       - name: Upload non-personal validation manifest
         if: success()
