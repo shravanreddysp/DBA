@@ -12,7 +12,7 @@ on:
       - 'KBS_Research/scalable_baselines.py'
       - 'KBS_Research/test_scalable_baselines.py'
       - 'KBS_Research/kg_model.py'
-      - 'KBS_Research/test_kg_model.py'
+      - 'KBS_Research/test_kg_model.py test_paired_uncertainty.py'
       - '.github/workflows/kbs-cordis-checks.yml'
   pull_request:
     paths:
