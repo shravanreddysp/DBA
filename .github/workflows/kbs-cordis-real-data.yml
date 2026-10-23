@@ -37,6 +37,9 @@ jobs:
       - name: Evaluate temporal KG contextual model on real CORDIS
         working-directory: KBS_Research
         run: python kg_model.py --queries 250
+      - name: Compute paired query-level uncertainty
+        working-directory: KBS_Research
+        run: python paired_uncertainty.py
       - name: Audit real-data KG results descriptively
         working-directory: KBS_Research
         run: python audit_results.py
@@ -84,4 +87,5 @@ jobs:
             KBS_Research/data/processed/scalable_baseline_results.json
             KBS_Research/data/processed/kg_model_results.json
             KBS_Research/data/processed/audit_results.json
+            KBS_Research/data/processed/paired_uncertainty.json
           retention-days: 30
