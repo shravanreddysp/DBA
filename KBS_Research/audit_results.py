@@ -26,7 +26,9 @@ def audit(model_path,output):
           "max_delta":max(r["delta"] for r in group),
           "positive_delta_seeds":sum(r["delta"]>0 for r in group),
           "mean_candidate_coverage":statistics.mean(r["coverage"] for r in group)}
-    result={"chosen_weight":obj["chosen_weight"],"summary":summary,"per_seed":rows,
+    methods=sorted(set.intersection(*(set(r["recall_at_k"]) for r in obj["test"])))
+    matched_baselines={method:statistics.mean(r["recall_at_k"][method] for r in obj["test"]) for method in methods}
+    result={"chosen_weight":obj["chosen_weight"],"summary":summary,"matched_test_recall_at_k":matched_baselines,"per_seed":rows,
       "statistical_caution":"Overlapping samples from one network; ranges are descriptive, not confidence intervals or significance tests.",
       "data_caution":"Retrospective project start dates do not establish point-in-time public availability."}
     out=Path(output);out.parent.mkdir(parents=True,exist_ok=True)
