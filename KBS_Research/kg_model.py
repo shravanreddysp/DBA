@@ -66,7 +66,7 @@ def rank(seed, known, events, projects, memberships, cutoff, horizon,
     degree={n:len(adj[n]) for n in known}
     hubs=sorted(known,key=lambda n:(-degree[n],n))[:100]
     sources=sorted(known,key=lambda n:(stable(seed,"query",n),n))[:query_count]
-    hits={"aa":0,"kg":0};covered=0;total=0;query_positive=0
+    hits={"aa":0,"kg":0,"cn":0,"ra":0,"pa":0};covered=0;total=0;query_positive=0
     for source in sources:
         truth=future[source]
         total+=len(truth)
@@ -84,7 +84,7 @@ def rank(seed, known, events, projects, memberships, cutoff, horizon,
             rest=sorted(pool-priority,key=lambda n:(-degree[n],n))
             pool=priority|set(rest[:max(0,candidate_budget-len(priority))])
         covered+=len(pool&truth)
-        scores={"aa":[],"kg":[]}
+        scores={m:[] for m in hits}
         for target in pool:
             shared=adj[source]&adj[target]
             aa=sum(1/math.log(degree[z]) for z in shared if degree[z]>1)
@@ -95,6 +95,9 @@ def rank(seed, known, events, projects, memberships, cutoff, horizon,
             kg=aa+weight*contextual
             scores["aa"].append((aa,target))
             scores["kg"].append((kg,target))
+            scores["cn"].append((len(shared),target))
+            scores["ra"].append((sum(1/degree[z] for z in shared if degree[z]>0),target))
+            scores["pa"].append((degree[source]*degree[target],target))
         for method in hits:
             top=sorted(scores[method],key=lambda t:(-t[0],t[1]))[:k]
             hits[method]+=sum(n in truth for _,n in top)
@@ -116,7 +119,7 @@ def run(folder,archive,seeds=(11,23,37),weights=(0.0,0.25,0.5,1.0),queries=250):
     chosen=sorted(weights,key=lambda w:(-val_score(w),w))[0]
     testing=[rank(seed,known,events,projects,memberships,date(2024,12,31),
                   date(2025,12,31),weight=chosen,query_count=queries) for seed in seeds]
-    return {"method":"KG-context weighted Adamic-Adar (transparent prototype, not novel proven AI)",
+    return {"method":"KG-context weighted Adamic-Adar versus matched-pool AA, CN, RA and PA",
             "seeds":list(seeds),"query_count":queries,
             "validation_weight_scores":{str(w):val_score(w) for w in weights},
             "chosen_weight":chosen,"validation":validation[chosen],"test":testing,
