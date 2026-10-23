@@ -67,6 +67,7 @@ def rank(seed, known, events, projects, memberships, cutoff, horizon,
     hubs=sorted(known,key=lambda n:(-degree[n],n))[:100]
     sources=sorted(known,key=lambda n:(stable(seed,"query",n),n))[:query_count]
     hits={"aa":0,"kg":0,"cn":0,"ra":0,"pa":0};covered=0;total=0;query_positive=0
+    query_details=[]
     for source in sources:
         truth=future[source]
         total+=len(truth)
@@ -98,13 +99,18 @@ def rank(seed, known, events, projects, memberships, cutoff, horizon,
             scores["cn"].append((len(shared),target))
             scores["ra"].append((sum(1/degree[z] for z in shared if degree[z]>0),target))
             scores["pa"].append((degree[source]*degree[target],target))
+        local_hits={}
         for method in hits:
             top=sorted(scores[method],key=lambda t:(-t[0],t[1]))[:k]
-            hits[method]+=sum(n in truth for _,n in top)
+            local_hits[method]=sum(n in truth for _,n in top)
+            hits[method]+=local_hits[method]
+        query_details.append({"query_key":hashlib.sha256(source.encode()).hexdigest(),
+                              "positives":len(truth),"hits":local_hits})
     return {"seed":seed,"cutoff":str(cutoff),"horizon":str(horizon),
             "queries":len(sources),"queries_with_observed_positives":query_positive,
             "positive_instances":total,"candidate_coverage":covered/total if total else None,
-            "recall_at_k":{m:hits[m]/total if total else None for m in hits}}
+            "recall_at_k":{m:hits[m]/total if total else None for m in hits},
+            "per_query":query_details}
 
 def run(folder,archive,seeds=(11,23,37),weights=(0.0,0.25,0.5,1.0),queries=250):
     known,events,projects,memberships=load(folder,archive)
