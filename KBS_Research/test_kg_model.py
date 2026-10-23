@@ -27,6 +27,7 @@ class KGModelTests(unittest.TestCase):
             self.assertIn(result["chosen_weight"],(0.,.5))
             self.assertEqual(len(result["test"]),2)
             self.assertEqual(result["test"][0]["queries"],4)
+            self.assertEqual(set(result["test"][0]["recall_at_k"]),{"aa","kg","cn","ra","pa"})
             self.assertEqual(result["test"][0]["positive_instances"],2)
             self.assertEqual(result["validation"][0]["positive_instances"],2)
 if __name__=="__main__":unittest.main()
