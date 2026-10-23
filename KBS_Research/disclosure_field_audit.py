@@ -11,7 +11,7 @@ from pathlib import Path
 from prepare_cordis import field, parse_date, rows_from_zip
 
 CANDIDATES=('publicationDate','publishedDate','datePublished',
-            'lastUpdateDate','lastUpdated','updateDate','startDate','endDate',
+            'lastUpdateDate','lastUpdated','updateDate','contentUpdateDate','startDate','endDate',
             'signatureDate','ecSignatureDate')
 
 def audit(archive):
