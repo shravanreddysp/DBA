@@ -21,7 +21,7 @@ jobs:
           python-version: '3.11'
       - name: Run offline unit tests
         working-directory: KBS_Research
-        run: python -m unittest -v test_prepare_cordis.py test_temporal_baselines.py test_knowledge_graph.py test_scalable_baselines.py test_kg_model.py test_audit_results.py test_paired_uncertainty.py
+        run: python -m unittest -v test_prepare_cordis.py test_temporal_baselines.py test_knowledge_graph.py test_scalable_baselines.py test_kg_model.py test_audit_results.py test_paired_uncertainty.py test_bipartite_model.py
       - name: Download and prepare official CORDIS archive
         working-directory: KBS_Research
         run: python prepare_cordis.py
