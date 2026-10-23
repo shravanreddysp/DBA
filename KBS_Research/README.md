@@ -1,3 +1,16 @@
+# Knowledge-Based Systems research — reproducibility
+
+**Phase 1:** Real public CORDIS Horizon Europe collaboration-data preparation added. See [DATASET.md](DATASET.md) for provenance, reuse conditions, temporal design, and limitations.
+
+```bash
+python -m unittest test_prepare_cordis.py
+python prepare_cordis.py
+```
+
+The preparation script downloads an official CSV ZIP (or accepts `--zip`), constructs observed organization collaboration labels, and writes an archive-hash manifest locally. **The full official download and extraction have not yet been executed or verified in this environment.** Raw/processed records are ignored by Git.
+
+The existing `experiment.py` is a **separate social-network feasibility benchmark**, not a trained model on CORDIS. Do not interpret its results as entrepreneurial ecosystem evidence.
+
 # KBS short-communication reproducibility package
 
 **Status: feasibility study, not submission-ready.** The real public dataset is Zachary's observed karate-club social network distributed with NetworkX; it is **not** entrepreneurial ecosystem data. Results cannot establish entrepreneurial innovation impact or novel state-of-the-art AI.
