@@ -99,7 +99,7 @@ def main():
     a=p.parse_args()
     if min(a.k,a.top_degree,a.max_twohop,a.max_queries)<1 or a.random_candidates<0:p.error("invalid candidate/query limits")
     results=[evaluate(a.data,date(2023,12,31),date(2024,12,31),a.k,a.top_degree,a.max_twohop,a.max_queries,a.random_candidates,a.seed),
-             evaluate(a.data,date(2024,12,31),date(2025,12,31),a.k,a.top_degree,a.max_twohop)]
+             evaluate(a.data,date(2024,12,31),date(2025,12,31),a.k,a.top_degree,a.max_twohop,a.max_queries,a.random_candidates,a.seed)]
     output=a.data/"scalable_baseline_results.json"
     output.write_text(json.dumps(results,indent=2),encoding="utf-8")
     print(json.dumps(results,indent=2))
