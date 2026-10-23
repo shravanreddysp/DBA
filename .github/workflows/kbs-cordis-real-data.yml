@@ -8,7 +8,7 @@ permissions:
 jobs:
   validate-official-cordis:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -16,7 +16,7 @@ jobs:
           python-version: '3.11'
       - name: Run offline unit tests
         working-directory: KBS_Research
-        run: python -m unittest -v test_prepare_cordis.py test_temporal_baselines.py test_knowledge_graph.py test_scalable_baselines.py
+        run: python -m unittest -v test_prepare_cordis.py test_temporal_baselines.py test_knowledge_graph.py test_scalable_baselines.py test_kg_model.py
       - name: Download and prepare official CORDIS archive
         working-directory: KBS_Research
         run: python prepare_cordis.py
@@ -29,6 +29,9 @@ jobs:
       - name: Run bounded real-data graph baselines
         working-directory: KBS_Research
         run: python scalable_baselines.py --k 10 --max-queries 250 --max-twohop 2000
+      - name: Evaluate temporal KG contextual model on real CORDIS
+        working-directory: KBS_Research
+        run: python kg_model.py --queries 250
       - name: Summarize verified data manifest
         if: success()
         working-directory: KBS_Research
@@ -39,6 +42,7 @@ jobs:
           m=json.loads(Path('data/processed/manifest.json').read_text())
           kg=json.loads(Path('data/kg_2023/kg_manifest.json').read_text())
           baseline=json.loads(Path('data/processed/scalable_baseline_results.json').read_text())
+          model=json.loads(Path('data/processed/kg_model_results.json').read_text())
           keys=['source','archive_sha256','archive_bytes','projects_with_dates','projects_with_memberships','organizations_known_by_train_end','training_first_collaboration_edges','validation_first_collaborations','test_first_collaborations']
           with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
               f.write('## CORDIS real-data extraction\n\n')
@@ -51,7 +55,11 @@ jobs:
                   f.write(f'- Candidate coverage: {split["candidate_coverage"]}\n')
                   for method, value in split["observed_positive_recall_at_k"].items():
                       f.write(f'- {method} observed-positive Recall@{split["k"]}: {value}\n')
-              f.write('\n**Caution:** Passing structural validation does not establish historical point-in-time public availability or entity-resolution accuracy.\n')
+              f.write('\\n## Temporal KG context model (exploratory)\\n\\n')
+              f.write(f'- Validation-selected weight: {model["chosen_weight"]}\\n')
+              for row in model["test"]:
+                  f.write(f'- Test seed {row["seed"]}: {row["recall_at_k"]}; candidate coverage {row["candidate_coverage"]}\\n')
+              f.write('\\n**Caution:** Passing structural validation does not establish historical point-in-time public availability or entity-resolution accuracy.\n')
           PY
       - name: Upload non-personal validation manifest
         if: success()
@@ -62,4 +70,5 @@ jobs:
             KBS_Research/data/processed/manifest.json
             KBS_Research/data/kg_2023/kg_manifest.json
             KBS_Research/data/processed/scalable_baseline_results.json
+            KBS_Research/data/processed/kg_model_results.json
           retention-days: 30
