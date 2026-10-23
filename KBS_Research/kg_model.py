@@ -15,7 +15,7 @@ from collections import defaultdict
 from datetime import date
 from pathlib import Path
 from prepare_cordis import field, parse_date, rows_from_zip
-from bipartite_model import historical_context, bipartite_score
+from bipartite_model import historical_context, source_intermediaries, fast_bipartite_score
 
 def stable(seed,*values):
     return hashlib.sha256("|".join(map(str,(seed,)+values)).encode()).digest()
@@ -87,6 +87,7 @@ def rank(seed, known, events, projects, memberships, cutoff, horizon,
             rest=sorted(pool-priority,key=lambda n:(-degree[n],n))
             pool=priority|set(rest[:max(0,candidate_budget-len(priority))])
         covered+=len(pool&truth)
+        bp_weights=source_intermediaries(source,org_projects,project_orgs)
         scores={m:[] for m in hits}
         for target in pool:
             shared=adj[source]&adj[target]
@@ -101,7 +102,7 @@ def rank(seed, known, events, projects, memberships, cutoff, horizon,
             scores["cn"].append((len(shared),target))
             scores["ra"].append((sum(1/degree[z] for z in shared if degree[z]>0),target))
             scores["pa"].append((degree[source]*degree[target],target))
-            scores["bp"].append((bipartite_score(source,target,org_projects,project_orgs),target))
+            scores["bp"].append((fast_bipartite_score(source,target,bp_weights,org_projects,project_orgs),target))
         local_hits={}
         for method in hits:
             top=sorted(scores[method],key=lambda t:(-t[0],t[1]))[:k]
