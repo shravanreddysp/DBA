@@ -1,0 +1,36 @@
+name: KBS Phase 12 ablation
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'KBS_Research/phase12_ablation.py'
+      - '.github/workflows/kbs-phase12-ablation.yml'
+permissions:
+  contents: read
+jobs:
+  phase12:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Prepare official CORDIS data
+        working-directory: KBS_Research
+        run: python prepare_cordis.py
+      - name: Validate temporal splits
+        working-directory: KBS_Research
+        run: python validate_cordis.py
+      - name: Run Phase 12 ablation and budget sensitivity
+        working-directory: KBS_Research
+        run: python phase12_ablation.py --queries 75
+      - name: Upload Phase 12 results
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase12-ablation-results
+          path: |
+            KBS_Research/data/processed/phase12_ablation.json
+            KBS_Research/data/processed/manifest.json
+          retention-days: 30
