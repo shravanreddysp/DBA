@@ -12,8 +12,8 @@ from pathlib import Path
 from kg_model import load, rank
 
 def run(folder,archive,queries=75,seeds=(11,23),budgets=(1000,2250),weights=(0.,1.)):
-    ablation=json.loads((folder/'retrieval_ablation.json').read_text())
-    strategy=ablation['validation_selected_strategy']
+    # Fixed from Phase 10's 2024 validation selection; never reselect on 2025.
+    strategy='shared_twohop'
     known,events,projects,memberships=load(folder,archive)
     result={'phase':12,'strategy':strategy,'seeds':list(seeds),'queries_per_seed':queries,
             'budgets':list(budgets),'weights':list(weights),'experiments':[],
