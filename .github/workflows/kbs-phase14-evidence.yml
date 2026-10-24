@@ -1,0 +1,58 @@
+name: KBS Phase 14 evidence package
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'KBS_Research/phase14_evidence.py'
+      - '.github/workflows/kbs-phase14-evidence.yml'
+permissions:
+  contents: read
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Prepare official CORDIS data
+        working-directory: KBS_Research
+        run: python prepare_cordis.py
+      - name: Validate temporal splits
+        working-directory: KBS_Research
+        run: python validate_cordis.py
+      - name: Regenerate retrieval comparison
+        working-directory: KBS_Research
+        run: python retrieval_ablation.py
+      - name: Regenerate Phase 11 rankings
+        working-directory: KBS_Research
+        run: python phase11_ranking.py --queries 250
+      - name: Regenerate paired uncertainty
+        working-directory: KBS_Research
+        run: python phase11_paired_uncertainty.py
+      - name: Run integrity audit
+        working-directory: KBS_Research
+        run: python phase13_integrity.py
+      - name: Run bounded Phase 12 ablation
+        working-directory: KBS_Research
+        run: python phase12_ablation.py --queries 75
+      - name: Assemble Phase 14 evidence and figure data
+        working-directory: KBS_Research
+        run: python phase14_evidence.py
+      - name: Upload final evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase14-final-evidence
+          path: |
+            KBS_Research/data/processed/phase14_evidence_package.json
+            KBS_Research/data/processed/phase14_table_ranking.csv
+            KBS_Research/data/processed/phase14_figure_coverage.csv
+            KBS_Research/data/processed/phase13_integrity_report.json
+            KBS_Research/data/processed/phase12_ablation.json
+            KBS_Research/data/processed/phase11_ranking_results.json
+            KBS_Research/data/processed/phase11_paired_uncertainty.json
+            KBS_Research/data/processed/retrieval_ablation.json
+            KBS_Research/data/processed/manifest.json
+          retention-days: 30
