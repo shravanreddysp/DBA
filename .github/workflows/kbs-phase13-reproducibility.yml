@@ -1,0 +1,51 @@
+name: KBS Phase 13 reproducibility
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'KBS_Research/phase13_integrity.py'
+      - '.github/workflows/kbs-phase13-reproducibility.yml'
+permissions:
+  contents: read
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run offline tests
+        working-directory: KBS_Research
+        run: python -m unittest -v test_kg_model.py test_retrieval_ablation.py test_bipartite_model.py
+      - name: Prepare CORDIS dataset
+        working-directory: KBS_Research
+        run: python prepare_cordis.py
+      - name: Validate temporal splits
+        working-directory: KBS_Research
+        run: python validate_cordis.py
+      - name: Regenerate Phase 10 candidate retrieval
+        working-directory: KBS_Research
+        run: python retrieval_ablation.py
+      - name: Regenerate Phase 11 six-method results
+        working-directory: KBS_Research
+        run: python phase11_ranking.py --queries 250
+      - name: Regenerate Phase 11 paired uncertainty
+        working-directory: KBS_Research
+        run: python phase11_paired_uncertainty.py
+      - name: Verify statistics and record file hashes
+        working-directory: KBS_Research
+        run: python phase13_integrity.py
+      - name: Upload reproducibility evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase13-reproducibility
+          path: |
+            KBS_Research/data/processed/phase13_integrity_report.json
+            KBS_Research/data/processed/phase11_ranking_results.json
+            KBS_Research/data/processed/phase11_paired_uncertainty.json
+            KBS_Research/data/processed/retrieval_ablation.json
+            KBS_Research/data/processed/manifest.json
+          retention-days: 30
