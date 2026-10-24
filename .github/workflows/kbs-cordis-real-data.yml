@@ -43,6 +43,12 @@ jobs:
       - name: Compare fixed-budget candidate retrieval strategies
         working-directory: KBS_Research
         run: python retrieval_ablation.py
+      - name: Evaluate six rankers on validation-selected retrieval
+        working-directory: KBS_Research
+        run: python phase11_ranking.py --queries 250
+      - name: Compute Phase 11 paired query uncertainty
+        working-directory: KBS_Research
+        run: python phase11_paired_uncertainty.py
       - name: Compute paired query-level uncertainty
         working-directory: KBS_Research
         run: python paired_uncertainty.py
@@ -96,4 +102,6 @@ jobs:
             KBS_Research/data/processed/paired_uncertainty.json
             KBS_Research/data/processed/disclosure_field_audit.json
             KBS_Research/data/processed/retrieval_ablation.json
+            KBS_Research/data/processed/phase11_ranking_results.json
+            KBS_Research/data/processed/phase11_paired_uncertainty.json
           retention-days: 30
