@@ -59,8 +59,10 @@ def snapshot(known,events,projects,memberships,cutoff):
 
 def rank(seed, known, events, projects, memberships, cutoff, horizon,
          k=10, query_count=250, candidate_budget=2250, explore=250,
-         weight=0.0):
+         weight=0.0, retrieval_strategy=None):
     adj,activity=snapshot(known,events,projects,memberships,cutoff)
+    if retrieval_strategy is not None:
+        from retrieval_ablation import candidates
     org_projects,project_orgs=historical_context(projects,memberships,cutoff,known)
     future=defaultdict(set)
     for a,b,d in events:
@@ -90,6 +92,8 @@ def rank(seed, known, events, projects, memberships, cutoff, horizon,
             priority=set(exploratory)&pool
             rest=sorted(pool-priority,key=lambda n:(-degree[n],n))
             pool=priority|set(rest[:max(0,candidate_budget-len(priority))])
+        if retrieval_strategy is not None:
+            pool=candidates(source,known,adj,degree,seed,retrieval_strategy,budget=candidate_budget)
         covered+=len(pool&truth)
         retrieval_totals['hubs']+=len((hub_pool&pool)&truth)
         retrieval_totals['two_hop']+=len((two_hop_pool&pool)&truth)
